@@ -15,6 +15,27 @@
 	real_name = "Test Dummy"
 	status_flags = GODMODE|CANPUSH
 
+/mob/living/carbon/human/thunderdrome
+	var/possessable = 1
+
+/mob/living/carbon/human/thunderdrome/death()
+	if(stat == DEAD)
+		return
+	stat = DEAD
+	src.gib()
+
+
+/mob/living/carbon/human/thunderdrome/attack_ghost(mob/user)
+	if(!ticker.mode)
+		user << "Can't become a drone before the game has started."
+		return
+	if(possessable == 1 && !src.key)
+		var/answer = alert("YOU WANNA FOKEN GO MATE? (Warning, You can no longer be cloned!)",,"Yes","No")
+		if(answer == "No" || gc_destroyed)
+			return
+		src.possessable = 0
+		src.key = user.key
+
 /mob/living/carbon/human/proc/oldInfect(mob/living/carbon/human/H)
 	if(H.stat == DEAD && H.infection == 0)
 		oldZombify(H)

@@ -8,6 +8,7 @@
 
 	var/health = 100 //The health of the drone dispenser. It will break if it goes below 0
 	var/max_health = 100
+	var/invulnerable = 0 //Can't be broken by hand, explosion or singuloth
 
 	var/icon_off = "off" //These variables allow for different icons when creating custom dispensers
 	var/icon_on = "on"
@@ -23,6 +24,8 @@
 	var/droneMadeRecently = 0
 	var/cooldownTime = 1800 //3 minutes
 	var/dispense_type = /obj/item/drone_shell/safedrone //The item the dispenser will create
+	var/last_created	//reference to the last created dispensable
+	var/work_while_occupied = 1 //If 0, won't dispense another thing if there is already such a thing on it's tile
 
 	var/work_sound = 'sound/items/rped.ogg'
 	var/create_sound = 'sound/items/Deconstruct.ogg'
@@ -98,6 +101,18 @@
 	break_sound = 'sound/effects/EMPulse.ogg'
 	break_message = "slowly falls dark, lights stuttering."
 
+/obj/machinery/droneDispenser/thunderdrome
+	name = "gladiator fabricator"
+	desc = "Rip and tear"
+	metal_cost = 0
+	glass_cost = 0
+	invulnerable = 1
+	cooldownTime = 10
+	work_while_occupied = 0
+	dispense_type = /mob/living/carbon/human/thunderdrome
+	begin_create_message = "hums softly as an interface appears above it, scrolling by at unreadable speed."
+	end_create_message = "materializes a strange shell, which drops to the ground."
+
 /obj/machinery/droneDispenser/examine(mob/user)
 	..()
 	if(droneMadeRecently && !stat && recharging_text)
@@ -145,7 +160,7 @@
 			glass = 0
 		if(power_used)
 			use_power(power_used)
-		new dispense_type(loc)
+		last_created = new dispense_type(loc)
 		if(create_sound)
 			playsound(src, create_sound, 50, 1)
 		if(end_create_message)
@@ -209,7 +224,7 @@
 		stat -= BROKEN
 		icon_state = icon_on
 		return
-	if(O.force && stat != BROKEN)
+	if(O.force && stat != BROKEN && !invulnerable)
 		user.visible_message("<span class='danger'>[user] hits [src] with [O]!</span>", \
 							 "<span class='warning'>You hit [src] with [O]!</span>")
 		playsound(src, O.hitsound, 50, 1)
@@ -223,3 +238,24 @@
 			icon_state = icon_off
 		return
 	..()
+
+
+/obj/machinery/droneDispenser/thunderdrome/process()
+	if(src.last_created == null)
+		..()
+	else
+		var/mob/living/carbon/human/thunderdrome/M = src.last_created
+		if(!work_while_occupied && M.stat != DEAD && get_turf(M) == get_turf(src)) //since the machine is constantly running, takes no resources and has only 4 seconds cooldown,
+			return																   //we make it not run if there's a living shell on top of it. living is important, because otherwise
+		else																	   //the ghosts can't move the corpse and no new will spawn
+			..()
+
+/obj/machinery/droneDispenser/singularity_act()
+	if(invulnerable == 1)
+		return
+	..()
+
+/obj/machinery/droneDispenser/thunderdrome/ex_act(severity)
+	if(invulnerable == 1)
+		return
+	..(severity)
