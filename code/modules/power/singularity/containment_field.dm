@@ -115,8 +115,8 @@
 	return
 
 /obj/machinery/field/proc/bump_field(atom/movable/AM as mob|obj)
-	sleep(5) // delay throwing just a bit so the server doesn't die when something bounces between 2 fields 9999 times a tick
-	if(AM.pulledby) //pulling creates some retarded inconsistency for objects s
+	sleep(5) // half a second delay
+	if(AM.pulledby) //if someone's pulling, stop them
 		AM.pulledby.stop_pulling()
 	var/datum/effect_system/spark_spread/s = new /datum/effect_system/spark_spread
 	s.set_up(5, 1, AM.loc)
@@ -126,7 +126,7 @@
 	AM.times_bumped_field++
 	if(AM.last_bumped_field == -1)
 		return
-	if(AM.last_bumped_field == 0) //first bump ever
+	if(AM.last_bumped_field == 0) //first bump
 		AM.last_bumped_field = world.time
 	else
 		if(world.time - AM.last_bumped_field < 50 && AM.times_bumped_field > 20) //if something bounced more than 20 times and it's been less than 5 seconds since last bounce, alert admins
